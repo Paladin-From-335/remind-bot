@@ -1,0 +1,18 @@
+spring:
+  jpa:
+    database: POSTGRESQL
+    show-sql: true
+    hibernate:
+      ddl-auto: update
+    generate-ddl: false
+    database-platform: org.hibernate.dialect.PostgreSQL10Dialect
+    open-in-view: false
+  datasource:
+    url: jdbc:postgresql://ec2-34-252-216-149.eu-west-1.compute.amazonaws.com:5432/d8bf4eb40dgo9m
+    username: nmvkwpqelrsqab
+    password: c32152939620cc54fb0301ca0d91be78060427c7bc164a936a0b68231b1bb38e
+    driverClassName: org.postgresql.Driver
+  main:
+    lazy-initialization: true
+#db.host=ec2-34-252-216-149.eu-west-1.compute.amazonaws.com
+#db.db=d8bf4eb40dgo9m
