@@ -6,7 +6,6 @@ spring:
       ddl-auto: update
     generate-ddl: false
     database-platform: org.hibernate.dialect.PostgreSQL10Dialect
-    open-in-view: false
   datasource:
     url: jdbc:postgresql://ec2-34-252-216-149.eu-west-1.compute.amazonaws.com:5432/d8bf4eb40dgo9m
     username: nmvkwpqelrsqab

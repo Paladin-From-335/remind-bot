@@ -19,8 +19,13 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeParseException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
+import lombok.SneakyThrows;
+import lombok.Synchronized;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.PropertySource;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -30,8 +35,9 @@ public class TelegramService extends TelegramLongPollingBot {
     private Message requestMessage = new Message();
     private SendMessage response = new SendMessage();
     private Map<Long, Remind> remindMap = new HashMap<>();
-    private final String botUsername;
-    private final String botToken;
+    private String botUsername;
+    private String botToken;
+    private Map<Long, Remind> todayRemindMap = new ConcurrentHashMap<>();
 
     private final RemindService remindService;
 
@@ -55,6 +61,7 @@ public class TelegramService extends TelegramLongPollingBot {
         return this.botToken;
     }
 
+    @SneakyThrows
     @Override
     public void onUpdateReceived(Update update) {
         requestMessage = update.getMessage();
@@ -94,20 +101,37 @@ public class TelegramService extends TelegramLongPollingBot {
             }
             if (remindMap.get(requestMessage.getChatId()).getRemindText() != null && remindMap.get(requestMessage.getChatId()).getCreatedTo() != null) {
 //                remindService.saveRemind(remindMap.get(requestMessage.getChatId()));
+                LocalDateTime ld = LocalDateTime.parse(remindMap.get(requestMessage.getChatId()).getCreatedTo(), DATE_TIME_FORMATTER);
+                if (Objects.isNull(todayRemindMap.get(requestMessage.getChatId()))
+                        && ld.getDayOfMonth() == LocalDateTime.now().getDayOfMonth()) {
+                    todayRemindMap.put(requestMessage.getChatId(), remindMap.get(requestMessage.getChatId()));
+                }
                 remindMap.remove(requestMessage.getChatId());
             }
 
         }
     }
 
-    private void defaultMsg(SendMessage response, String msg) {
-       try {
-           response.enableHtml(true);
-           response.setText(msg);
-           execute(response);
-       }catch (TelegramApiException e) {
-           e.printStackTrace();
-       }
+    private void defaultMsg(SendMessage response, String msg) throws TelegramApiException {
+        response.enableHtml(true);
+        response.setText(msg);
+        execute(response);
+    }
+
+    @Scheduled(fixedDelay = 1000)
+    @SneakyThrows
+    private void sendRemind() {
+        for (Long key : todayRemindMap.keySet()) {
+            SendMessage sm = new SendMessage();
+            sm.setChatId(key);
+            LocalDateTime ldt = LocalDateTime.parse(todayRemindMap.get(key).getCreatedTo(), DATE_TIME_FORMATTER);
+            String currentTime = LocalDateTime.now().format(DATE_TIME_FORMATTER);
+            LocalDateTime currentLdt = LocalDateTime.parse(currentTime, DATE_TIME_FORMATTER);
+            if (currentLdt.isEqual(ldt)) {
+                defaultMsg(sm, todayRemindMap.get(key).getRemindText());
+                todayRemindMap.remove(key);
+            }
+        }
     }
 
 }
