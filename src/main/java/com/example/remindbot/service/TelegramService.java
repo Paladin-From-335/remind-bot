@@ -20,6 +20,7 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeParseException;
 import java.util.Map;
 import java.util.Objects;
@@ -78,15 +79,15 @@ public class TelegramService extends TelegramLongPollingBot {
             } else if (!userMessage.startsWith("/")) {
                 if (remindMap.get(requestMessage.getChatId()) == null) {
                     remindMap.put(requestMessage.getChatId(), new Reminder(
-                            userMessage, requestMessage.getChatId(), LocalDateTime.parse(LocalDateTime.now().format(DATE_TIME_FORMATTER), DATE_TIME_FORMATTER)));
+                            userMessage, requestMessage.getChatId(), LocalDateTime.parse(LocalDateTime.now(ZoneId.of("GMT")).format(DATE_TIME_FORMATTER), DATE_TIME_FORMATTER)));
                     defaultMsg(response, CREATING_TIME.toString());
                 } else if (remindMap.get(requestMessage.getChatId()).getRemindText() != null) {
                     try {
-                        if (LocalDateTime.now().isAfter(LocalDateTime.parse(userMessage, DATE_TIME_FORMATTER))) {
+                        if (LocalDateTime.now(ZoneId.of("GMT")).isAfter(LocalDateTime.parse(userMessage, DATE_TIME_FORMATTER))) {
                             throw new OldDateException(
                                     String.format(
                                             WRONG_TIME_EXCEPTION.toString(),
-                                            LocalDateTime.now().format(DATE_TIME_FORMATTER)));
+                                            LocalDateTime.now(ZoneId.of("GMT")).format(DATE_TIME_FORMATTER)));
                         }
                         LocalDateTime time = LocalDateTime.parse(userMessage, DATE_TIME_FORMATTER);
                         remindMap.get(requestMessage.getChatId()).setCreatedTo(time);
@@ -121,17 +122,20 @@ public class TelegramService extends TelegramLongPollingBot {
         execute(response);
     }
 
-    @Scheduled(fixedDelayString = "${fixedDelay.send-reminder}")
+    @Scheduled(fixedDelay = 5000)
     @SneakyThrows
     private void sendRemind() {
         for (Long key : todayRemindMap.keySet()) {
             SendMessage sm = new SendMessage();
             sm.setChatId(key);
             LocalDateTime ldt = todayRemindMap.get(key).getCreatedTo();
-            String currentTime = LocalDateTime.now().format(DATE_TIME_FORMATTER);
+            String currentTime = LocalDateTime.now(ZoneId.of("GMT")).format(DATE_TIME_FORMATTER);
             LocalDateTime currentLdt = LocalDateTime.parse(currentTime, DATE_TIME_FORMATTER);
             if (currentLdt.isEqual(ldt) || ldt.isBefore(currentLdt)) {
-                defaultMsg(sm, todayRemindMap.get(key).getRemindText());
+                for (int i = 0; i < 3; i++) {
+                    defaultMsg(sm, todayRemindMap.get(key).getRemindText());
+                    Thread.sleep(10000);
+                }
                 todayRemindMap.remove(key);
             }
         }
