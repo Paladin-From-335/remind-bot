@@ -3,7 +3,7 @@ package com.example.remindbot.utils;
 import lombok.NoArgsConstructor;
 
 @NoArgsConstructor
-public enum CommandsEn {
+public enum Command {
 
     START("/start"),
     EN("/en"),
@@ -14,7 +14,7 @@ public enum CommandsEn {
 
     private String value;
 
-    CommandsEn(String str) {
+    Command(String str) {
         this.value = str;
     }
 

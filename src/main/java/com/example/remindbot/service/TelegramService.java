@@ -1,16 +1,19 @@
 package com.example.remindbot.service;
 
-import static com.example.remindbot.utils.CommandsEn.CREATE;
-import static com.example.remindbot.utils.CommandsEn.START;
+import static com.example.remindbot.utils.Command.CREATE;
+import static com.example.remindbot.utils.Command.HELP;
+import static com.example.remindbot.utils.Command.START;
 import static com.example.remindbot.utils.DateTimeUtil.DATE_TIME_FORMATTER;
 import static com.example.remindbot.utils.Phrases.CREATED_REMIND;
 import static com.example.remindbot.utils.Phrases.CREATING_TEXT;
 import static com.example.remindbot.utils.Phrases.CREATING_TIME;
 import static com.example.remindbot.utils.Phrases.GREETINGS;
+import static com.example.remindbot.utils.Phrases.HELP_INFO;
 import static com.example.remindbot.utils.Phrases.INCORRECT_DATE_FORMAT;
 import static com.example.remindbot.utils.Phrases.WRONG_TIME_EXCEPTION;
 
 import com.example.remindbot.model.Reminder;
+import com.example.remindbot.utils.Command;
 import com.example.remindbot.utils.exception.OldDateException;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.TelegramBotsApi;
@@ -41,6 +44,7 @@ public class TelegramService extends TelegramLongPollingBot {
     private String botUsername;
     private String botToken;
     private Map<Long, Reminder> todayRemindMap = new ConcurrentHashMap<>();
+    private Command commands;
 
     private final RemindService remindService;
 
@@ -67,53 +71,9 @@ public class TelegramService extends TelegramLongPollingBot {
     @SneakyThrows
     @Override
     public void onUpdateReceived(Update update) {
-        requestMessage = update.getMessage();
-        response.setChatId(requestMessage.getChatId().toString());
+        response.setChatId(requestMessage.getChatId());
         String userMessage = requestMessage.getText();
-        if (update.hasMessage() && requestMessage.hasText()) {
-            System.out.println(update.getMessage().getText() + ", chatID: " + requestMessage.getChatId());
-            if (userMessage.equals(START.toString())) {
-                defaultMsg(response, GREETINGS.toString());
-            } else if (userMessage.equals(CREATE.toString())) {
-                defaultMsg(response, CREATING_TEXT.toString());
-            } else if (!userMessage.startsWith("/")) {
-                if (remindMap.get(requestMessage.getChatId()) == null) {
-                    remindMap.put(requestMessage.getChatId(), new Reminder(
-                            userMessage, requestMessage.getChatId(), LocalDateTime.parse(LocalDateTime.now(ZoneId.of("GMT")).format(DATE_TIME_FORMATTER), DATE_TIME_FORMATTER)));
-                    defaultMsg(response, CREATING_TIME.toString());
-                } else if (remindMap.get(requestMessage.getChatId()).getRemindText() != null) {
-                    try {
-                        if (LocalDateTime.now(ZoneId.of("GMT")).isAfter(LocalDateTime.parse(userMessage, DATE_TIME_FORMATTER))) {
-                            throw new OldDateException(
-                                    String.format(
-                                            WRONG_TIME_EXCEPTION.toString(),
-                                            LocalDateTime.now(ZoneId.of("GMT")).format(DATE_TIME_FORMATTER)));
-                        }
-                        LocalDateTime time = LocalDateTime.parse(userMessage, DATE_TIME_FORMATTER);
-                        remindMap.get(requestMessage.getChatId()).setCreatedTo(time);
-                        defaultMsg(response, String.format(
-                                CREATED_REMIND.toString(),
-                                remindMap.get(requestMessage.getChatId()).getRemindText(),
-                                remindMap.get(requestMessage.getChatId()).getCreatedTo()));
-                    } catch (DateTimeParseException e) {
-                        defaultMsg(response, INCORRECT_DATE_FORMAT.toString());
-                    } catch (OldDateException e) {
-                        defaultMsg(response, e.getMessage());
-                    }
-                }
-                if (Objects.nonNull(remindMap.get(requestMessage.getChatId()).getRemindText()) && Objects.nonNull(remindMap.get(requestMessage.getChatId()).getCreatedTo())) {
-                    remindService.saveRemind(remindMap.get(requestMessage.getChatId()));
-                    LocalDateTime ld = remindMap.get(requestMessage.getChatId()).getCreatedTo();
-                    if (Objects.isNull(todayRemindMap.get(requestMessage.getChatId()))
-                            && ld.toLocalDate().
-                            equals(LocalDate.now())) {
-                        todayRemindMap.put(requestMessage.getChatId(), remindMap.get(requestMessage.getChatId()));
-                        System.out.println(todayRemindMap.keySet());
-                    }
-                    remindMap.remove(requestMessage.getChatId());
-                }
-            }
-        }
+        doEvent(userMessage, update);
     }
 
     private void defaultMsg(SendMessage response, String msg) throws TelegramApiException {
@@ -141,4 +101,69 @@ public class TelegramService extends TelegramLongPollingBot {
         }
     }
 
+    private void doEvent(String userMessage, Update update) throws TelegramApiException {
+        requestMessage = update.getMessage();
+        if (update.hasMessage() && requestMessage.hasText()) {
+            System.out.println(update.getMessage().getText() + ", chatID: " + requestMessage.getChatId());
+            //main commands start
+            if (userMessage.equals(HELP.toString())) {
+                defaultMsg(response, HELP_INFO.toString());
+            }
+            if (userMessage.equals(START.toString())) {
+                defaultMsg(response, GREETINGS.toString());
+            }
+            if (userMessage.equals(CREATE.toString())) {
+                defaultMsg(response, CREATING_TEXT.toString());
+                if (remindMap.get(requestMessage.getChatId()) != null) {
+                    remindMap.remove(requestMessage.getChatId());
+                }
+            }
+            //main commands end
+
+            //reminder creating
+            if (!userMessage.startsWith("/")) {
+                if (remindMap.get(requestMessage.getChatId()) == null) {
+                    remindMap.put(requestMessage.getChatId(), new Reminder(
+                            userMessage,
+                            requestMessage.getChatId(),
+                            LocalDateTime.parse(LocalDateTime.now(ZoneId.of("GMT"))
+                                    .format(DATE_TIME_FORMATTER), DATE_TIME_FORMATTER)));
+                    defaultMsg(response, CREATING_TIME.toString());
+                } else if (remindMap.get(requestMessage.getChatId()).getRemindText() != null) {
+                    try {
+                        if (LocalDateTime.now(ZoneId.of("GMT")).isAfter(LocalDateTime.parse(userMessage, DATE_TIME_FORMATTER))) {
+                            throw new OldDateException(
+                                    String.format(
+                                            WRONG_TIME_EXCEPTION.toString(),
+                                            LocalDateTime.now(ZoneId.of("GMT")).format(DATE_TIME_FORMATTER)));
+                        }
+                        LocalDateTime time = LocalDateTime.parse(userMessage, DATE_TIME_FORMATTER);
+                        remindMap.get(requestMessage.getChatId()).setCreatedTo(time);
+                        defaultMsg(response, String.format(
+                                CREATED_REMIND.toString(),
+                                remindMap.get(requestMessage.getChatId()).getRemindText(),
+                                remindMap.get(requestMessage.getChatId()).getCreatedTo()));
+                    } catch (DateTimeParseException e) {
+                        defaultMsg(response, INCORRECT_DATE_FORMAT.toString());
+                    } catch (OldDateException e) {
+                        defaultMsg(response, e.getMessage());
+                    }
+                }
+                //saving to db
+                if (Objects.nonNull(remindMap.get(requestMessage.getChatId()).getRemindText())
+                        && Objects.nonNull(remindMap.get(requestMessage.getChatId()).getCreatedTo())) {
+                    remindService.saveRemind(remindMap.get(requestMessage.getChatId()));
+                }
+                //saving actual to todayRemindMap
+                LocalDateTime ld = remindMap.get(requestMessage.getChatId()).getCreatedTo();
+                if (Objects.isNull(todayRemindMap.get(requestMessage.getChatId()))
+                        && ld.toLocalDate().
+                        equals(LocalDate.now())) {
+                    todayRemindMap.put(requestMessage.getChatId(), remindMap.get(requestMessage.getChatId()));
+                    System.out.println(todayRemindMap.keySet());
+                }
+                remindMap.remove(requestMessage.getChatId());
+            }
+        }
+    }
 }
