@@ -7,9 +7,9 @@ spring:
     generate-ddl: false
     database-platform: org.hibernate.dialect.PostgreSQL10Dialect
   datasource:
-    url: jdbc:postgresql://ec2-34-252-216-149.eu-west-1.compute.amazonaws.com:5432/d8bf4eb40dgo9m
-    username: nmvkwpqelrsqab
-    password: c32152939620cc54fb0301ca0d91be78060427c7bc164a936a0b68231b1bb38e
+    url: jdbc:postgresql://localhost:5432/postgres
+    username: postgres
+    password: PaladinFrom!335
     driverClassName: org.postgresql.Driver
   main:
     lazy-initialization: true
