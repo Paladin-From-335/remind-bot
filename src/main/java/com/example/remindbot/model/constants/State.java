@@ -1,5 +1,8 @@
 package com.example.remindbot.model.constants;
 
+import org.springframework.stereotype.Component;
+
+@Component
 public enum State {
     START, HELP, CREATE, EMPTY,
     REMIND_DESCRIPTION, REMIND_TIME, REMIND_DATE,

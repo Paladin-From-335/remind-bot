@@ -12,22 +12,31 @@ import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.time.format.ResolverStyle;
 
 public class DateTimeUtil {
-    private static final String DATE_PATTERN = "dd.MM.yyyy";
-    protected static final DateTimeFormatter DATE_FORMATTER =
-            DateTimeFormatter.ofPattern(DATE_PATTERN);
+
+    protected static final DateTimeFormatter DATE_TIME_FORMATTER =
+            DateTimeFormatter.ofPattern("dd.MM.yyyy");
+
+    private static final DateTimeFormatter DATE_FORMATTER_STRICT =
+            DateTimeFormatter.ofPattern("dd.MM.uuuu");
+
+    private static final DateTimeFormatter DATE_TIME_FORMATTER_STRICT =
+            DateTimeFormatter.ofPattern("dd.MM.uuuu HH:mm");
+
+    private static final Integer maxGmt = 14;
+    private static final Integer minGmt = -12;
 
     public static Boolean validateDateTime(String reminderDate,
                                            String reminderTime,
                                            String userGmt) throws IncorrectDateTimeException {
         try {
-            LocalDate parsedDate = LocalDate.parse(reminderDate, DATE_FORMATTER);
-            if (reminderTime != null) {
-                LocalTime parsedTime = LocalTime.parse(reminderTime, ISO_TIME);
-                return !parsedDate.atTime(parsedTime).isBefore(LocalDateTime.now(ZoneId.of(userGmt)));
-            }
-            return !parsedDate.isBefore(LocalDate.now(ZoneId.of(userGmt)));
+            LocalDateTime ldt = LocalDateTime.parse(
+                    reminderDate + " " + reminderTime, DATE_TIME_FORMATTER_STRICT
+                            .withResolverStyle(ResolverStyle.STRICT)
+                            .withZone(ZoneId.of(userGmt)));
+            return !ldt.isBefore(LocalDateTime.now(ZoneId.of(userGmt)));
         } catch (DateTimeParseException e) {
             throw new IncorrectDateTimeException(INCORRECT_DATE_TIME_FORMAT.toString());
         }
@@ -35,7 +44,10 @@ public class DateTimeUtil {
 
     public static Boolean validateDate(String remindDate, String userGmt) throws IncorrectDateTimeException {
         try {
-            LocalDate parsedDate = LocalDate.parse(remindDate, DATE_FORMATTER);
+            LocalDate parsedDate = LocalDate.parse(
+                    remindDate, DATE_FORMATTER_STRICT
+                            .withResolverStyle(ResolverStyle.STRICT)
+                            .withZone(ZoneId.of(userGmt)));
             return !parsedDate.isBefore(LocalDate.now(ZoneId.of(userGmt)));
         } catch (DateTimeParseException e) {
             throw new IncorrectDateTimeException(INCORRECT_DATE_FORMAT.toString());
@@ -43,14 +55,16 @@ public class DateTimeUtil {
     }
 
     public static Integer countUserGmt(String userTimezone) {
-        LocalTime serverGmt = LocalTime.now(ZoneId.of("GMT"));
+        int serverHour = LocalTime.now(ZoneId.of("GMT")).getHour();
         int ifMore = 24;
         try {
             int userHour = LocalTime.parse(userTimezone, ISO_TIME).getHour();
-            if (userHour - serverGmt.getHour() >= 12) {
-                return userHour - (serverGmt.getHour() + ifMore);
+            if (userHour - serverHour > maxGmt) {
+                return userHour - (serverHour + ifMore);
+            } else if (userHour - serverHour < minGmt) {
+                return userHour - (serverHour - ifMore);
             }
-            return userHour - serverGmt.getHour();
+            return userHour - serverHour;
         } catch (DateTimeParseException e) {
             throw new IncorrectDateTimeException(INCORRECT_TIME_FORMAT.toString());
         }

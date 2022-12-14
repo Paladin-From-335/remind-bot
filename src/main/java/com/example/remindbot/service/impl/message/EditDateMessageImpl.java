@@ -2,25 +2,28 @@ package com.example.remindbot.service.impl.message;
 
 import static com.example.remindbot.model.constants.Response.ELAPSED_DATE;
 import static com.example.remindbot.utils.DateTimeUtil.validateDateTime;
+import static com.example.remindbot.utils.KeyboardUtil.getEditMarkup;
 import static com.example.remindbot.utils.KeyboardUtil.getMessageMarkup;
 import static com.example.remindbot.utils.Mapper.dtoToResponse;
 import static com.example.remindbot.utils.ResponseBuilder.buildResponse;
 
+import com.example.remindbot.model.constants.State;
 import com.example.remindbot.model.dto.ReminderDto;
 import com.example.remindbot.model.dto.ServiceWrapper;
-import com.example.remindbot.service.MessageService;
 import com.example.remindbot.utils.cash.EventCash;
 import com.example.remindbot.utils.exception.IncorrectDateTimeException;
-import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
-import lombok.RequiredArgsConstructor;
+import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
+import lombok.Getter;
 import org.springframework.stereotype.Component;
 
+@Getter
 @Component
-@RequiredArgsConstructor
-public class EditDateMessageImpl implements MessageService {
+public class EditDateMessageImpl extends MessageServiceImpl {
+
+    private final State key = State.EDIT_DATE;
 
     @Override
-    public SendMessage handleMessage(ServiceWrapper wrapper) throws IncorrectDateTimeException {
+    public BotApiMethod<?> handleMessage(ServiceWrapper wrapper) throws IncorrectDateTimeException {
         Long id = wrapper.getId();
         String reminderDate = wrapper.getUserMsg();
         String userTimezone = wrapper.getUserRepo().getUserTimezone(id);
@@ -29,7 +32,8 @@ public class EditDateMessageImpl implements MessageService {
             EventCash.getEvent(id).setDateTo(reminderDate);
             return buildResponse(
                     id,
-                    dtoToResponse(EventCash.getEvent(id))
+                    dtoToResponse(EventCash.getEvent(id)),
+                    getEditMarkup()
             );
         }
         return buildResponse(

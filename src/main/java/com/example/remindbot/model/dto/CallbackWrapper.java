@@ -9,5 +9,11 @@ import lombok.Data;
 public class CallbackWrapper {
 
     private Long id;
+    private Integer lastMsgId;
     private RemindService remindService;
+
+    public CallbackWrapper(Long id, RemindService remindService) {
+        this.id = id;
+        this.remindService = remindService;
+    }
 }

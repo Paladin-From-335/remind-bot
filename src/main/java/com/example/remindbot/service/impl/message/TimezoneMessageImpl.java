@@ -3,16 +3,20 @@ package com.example.remindbot.service.impl.message;
 import static com.example.remindbot.utils.DateTimeUtil.countUserGmt;
 import static com.example.remindbot.utils.ResponseBuilder.buildResponse;
 
+import com.example.remindbot.model.constants.State;
 import com.example.remindbot.model.dto.ServiceWrapper;
-import com.example.remindbot.service.MessageService;
-import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
+import lombok.Getter;
 import org.springframework.stereotype.Component;
 
+@Getter
 @Component
-public class TimezoneMessageImpl implements MessageService {
+public class TimezoneMessageImpl extends MessageServiceImpl {
+
+    private final State key = State.SET_TIMEZONE;
 
     @Override
-    public SendMessage handleMessage(ServiceWrapper wrapper) {
+    public BotApiMethod<?> handleMessage(ServiceWrapper wrapper) {
         Long id = wrapper.getId();
         String userTime = wrapper.getUserMsg();
         Integer userGmt = countUserGmt(userTime);

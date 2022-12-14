@@ -7,17 +7,20 @@ import static com.example.remindbot.utils.ResponseBuilder.buildResponse;
 
 import com.example.remindbot.model.constants.State;
 import com.example.remindbot.model.dto.ServiceWrapper;
-import com.example.remindbot.service.MessageService;
 import com.example.remindbot.utils.cash.EventCash;
 import com.example.remindbot.utils.cash.StateCash;
-import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
+import lombok.Getter;
 import org.springframework.stereotype.Component;
 
+@Getter
 @Component
-public class DateMessageImpl implements MessageService {
+public class DateMessageImpl extends MessageServiceImpl {
+
+    private final State key = State.REMIND_DATE;
 
     @Override
-    public SendMessage handleMessage(ServiceWrapper wrapper) {
+    public BotApiMethod<?> handleMessage(ServiceWrapper wrapper) {
         Long id = wrapper.getId();
         String userTimezone = wrapper.getUserRepo().getUserTimezone(id);
         String reminderDate = wrapper.getUserMsg();

@@ -15,7 +15,7 @@ public enum Response {
             "<b>Date: </b><i>%s</i>"),
     INCORRECT_DATE_FORMAT("Incorrect date format, try again.\n" +
             "Example: 01.01.1970 (day.mon.year)"),
-    INCORRECT_TIME_FORMAT("To start enter your current time" +
+    INCORRECT_TIME_FORMAT("To start enter your current time\n" +
             "Incorrect time format, try again.\n" +
             "Example: 23:30 (hour:min)\n" +
             "<i>24-hour format</i>"),

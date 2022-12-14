@@ -6,7 +6,7 @@ import com.example.remindbot.config.ServiceConfig;
 import com.example.remindbot.model.dto.CallbackWrapper;
 import com.example.remindbot.service.CallbackService;
 import com.example.remindbot.service.RemindService;
-import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
@@ -19,7 +19,7 @@ public class CallbackHandler {
     private final ServiceConfig serviceConfig;
     private final RemindService remindService;
 
-    public SendMessage handleCallback(Update query) {
+    public BotApiMethod<?> handleCallback(Update query) {
         Long id = query.getCallbackQuery().getMessage().getChatId();
         CallbackWrapper callbackWrapper = new CallbackWrapper(id, remindService);
         String queryMessage = query.getCallbackQuery().getData();

@@ -8,6 +8,7 @@ import com.example.remindbot.service.handler.MessageHandler;
 import com.example.remindbot.utils.cash.StateCash;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.TelegramBotsApi;
+import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
@@ -87,12 +88,19 @@ public class BotFaceService extends TelegramLongPollingBot {
     }
 
     private void handleQuery(Update query) throws TelegramApiException {
-        sendMsg(callbackHandler.handleCallback(query));
+        sendMsg((SendMessage) callbackHandler.handleCallback(query));
     }
 
     private void sendMsg(SendMessage response) throws TelegramApiException {
         response.enableHtml(true);
         execute(response);
+    }
+
+    //TODO GET METHOD ID
+    private void sendMsg(BotApiMethod<?>... args) throws TelegramApiException {
+        for (BotApiMethod<?> arg : args) {
+            execute(arg);
+        }
     }
 
     @Scheduled
