@@ -3,26 +3,23 @@ package com.example.remindbot.service.impl.message;
 import static com.example.remindbot.model.constants.Response.CREATING_DATE;
 import static com.example.remindbot.utils.ResponseBuilder.buildResponse;
 
+import com.example.remindbot.config.DataWrapperConfig;
 import com.example.remindbot.model.constants.State;
-import com.example.remindbot.model.dto.ServiceWrapper;
-import com.example.remindbot.utils.cash.EventCash;
-import com.example.remindbot.utils.cash.StateCash;
+import com.example.remindbot.service.MessageService;
+import com.example.remindbot.service.handler.cash.EventCash;
+import com.example.remindbot.service.handler.cash.StateCash;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import lombok.Getter;
 import org.springframework.stereotype.Component;
 
 @Getter
-@Component
-public class TextMessageImpl extends MessageServiceImpl {
-
-    private final State key = State.REMIND_DESCRIPTION;
+@Component("REMIND_DESCRIPTION")
+public class TextMessageImpl implements MessageService {
 
     @Override
-    public BotApiMethod<?> handleMessage(ServiceWrapper wrapper) {
-        Long id = wrapper.getId();
-        String userMessage = wrapper.getUserMsg();
-        StateCash.saveStateCash(id, State.REMIND_DATE);
-        EventCash.getEvent(id).setRemindText(userMessage);
+    public BotApiMethod<?> handleMessage(Long id, String userMessage, DataWrapperConfig data) {
+        data.getStates().saveStateCash(id, State.REMIND_DATE);
+        data.getEvents().getEvent(id).setRemindText(userMessage);
         return buildResponse(id, CREATING_DATE.toString());
     }
 }

@@ -2,44 +2,38 @@ package com.example.remindbot.service.impl.message;
 
 import static com.example.remindbot.model.constants.Response.ELAPSED_DATE;
 import static com.example.remindbot.utils.DateTimeUtil.validateDateTime;
-import static com.example.remindbot.utils.KeyboardUtil.getEditMarkup;
-import static com.example.remindbot.utils.KeyboardUtil.getMessageMarkup;
-import static com.example.remindbot.utils.Mapper.dtoToResponse;
 import static com.example.remindbot.utils.ResponseBuilder.buildResponse;
 
-import com.example.remindbot.model.constants.State;
+import com.example.remindbot.config.DataWrapperConfig;
 import com.example.remindbot.model.dto.ReminderDto;
-import com.example.remindbot.model.dto.ServiceWrapper;
-import com.example.remindbot.utils.cash.EventCash;
+import com.example.remindbot.service.MessageService;
 import com.example.remindbot.utils.exception.IncorrectDateTimeException;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 @Getter
-@Component
-public class EditDateMessageImpl extends MessageServiceImpl {
-
-    private final State key = State.EDIT_DATE;
-
+@Component("EDIT_DATE")
+@RequiredArgsConstructor
+public class EditDateMessageImpl implements MessageService {
+    
     @Override
-    public BotApiMethod<?> handleMessage(ServiceWrapper wrapper) throws IncorrectDateTimeException {
-        Long id = wrapper.getId();
-        String reminderDate = wrapper.getUserMsg();
-        String userTimezone = wrapper.getUserRepo().getUserTimezone(id);
-        ReminderDto reminder = EventCash.getEvent(id);
+    public BotApiMethod<?> handleMessage(Long id, String reminderDate, DataWrapperConfig data) throws IncorrectDateTimeException {
+        String userTimezone = data.getUserRepo().getTimezone(id);
+        ReminderDto reminder = data.getEvents().getEvent(id);
         if (validateDateTime(reminderDate, reminder.getTimeTo(), userTimezone)) {
-            EventCash.getEvent(id).setDateTo(reminderDate);
+            data.getEvents().getEvent(id).setDateTo(reminderDate);
             return buildResponse(
                     id,
-                    dtoToResponse(EventCash.getEvent(id)),
-                    getEditMarkup()
+                    data.getMapper().dtoToResponse(data.getEvents().getEvent(id)),
+                    data.getKeyboard().getReminderMarkup()
             );
         }
         return buildResponse(
                 id,
                 ELAPSED_DATE.toString(),
-                getMessageMarkup()
+                data.getKeyboard().getReminderMarkup()
         );
     }
 }

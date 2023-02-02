@@ -25,6 +25,9 @@ public class DateTimeUtil {
     private static final DateTimeFormatter DATE_TIME_FORMATTER_STRICT =
             DateTimeFormatter.ofPattern("dd.MM.uuuu HH:mm");
 
+    public static final DateTimeFormatter DATE_TIME_SEND =
+            DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm");
+
     private static final Integer maxGmt = 14;
     private static final Integer minGmt = -12;
 
@@ -69,4 +72,11 @@ public class DateTimeUtil {
             throw new IncorrectDateTimeException(INCORRECT_TIME_FORMAT.toString());
         }
     }
+
+    public static Boolean isEqualsOrElapsed(LocalDateTime userTime) {
+        LocalDateTime serverTime = LocalDateTime.now(ZoneId.of("GMT"));
+        return serverTime.format(DATE_TIME_SEND).equals(userTime.format(DATE_TIME_SEND))
+                || serverTime.isAfter(userTime);
+    }
+
 }

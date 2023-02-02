@@ -1,31 +1,29 @@
 package com.example.remindbot.service.impl.message;
 
-import static com.example.remindbot.utils.KeyboardUtil.getEditMarkup;
-import static com.example.remindbot.utils.Mapper.dtoToResponse;
 import static com.example.remindbot.utils.ResponseBuilder.buildResponse;
 
+import com.example.remindbot.config.DataWrapperConfig;
 import com.example.remindbot.model.constants.State;
-import com.example.remindbot.model.dto.ServiceWrapper;
-import com.example.remindbot.utils.cash.EventCash;
+import com.example.remindbot.service.MessageService;
+import com.example.remindbot.utils.KeyboardUtil;
+import com.example.remindbot.utils.Mapper;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 @Getter
-@Component
-public class EditTextMessageImpl extends MessageServiceImpl {
-
-    private final State key = State.EDIT_TEXT;
+@Component("EDIT_TEXT")
+@RequiredArgsConstructor
+public class EditTextMessageImpl implements MessageService {
 
     @Override
-    public BotApiMethod<?> handleMessage(ServiceWrapper wrapper) {
-        Long id = wrapper.getId();
-        String reminderText = wrapper.getUserMsg();
-        EventCash.getEvent(id).setRemindText(reminderText);
+    public BotApiMethod<?> handleMessage(Long id, String userMessage, DataWrapperConfig data) {
+        data.getEvents().getEvent(id).setRemindText(userMessage);
         return buildResponse(
                 id,
-                dtoToResponse(EventCash.getEvent(id)),
-                getEditMarkup()
+                data.getMapper().dtoToResponse(data.getEvents().getEvent(id)),
+                data.getKeyboard().getReminderMarkup()
         );
     }
 }

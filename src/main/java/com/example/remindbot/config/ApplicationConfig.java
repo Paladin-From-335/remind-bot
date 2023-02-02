@@ -6,9 +6,11 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import org.telegram.telegrambots.updatesreceivers.DefaultBotSession;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 @Configuration
-public class Config {
+@EnableScheduling
+public class ApplicationConfig {
 
     @Bean
     ObjectMapper customObjectMapper() {

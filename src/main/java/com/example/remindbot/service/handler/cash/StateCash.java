@@ -1,4 +1,4 @@
-package com.example.remindbot.utils.cash;
+package com.example.remindbot.service.handler.cash;
 
 import com.example.remindbot.model.constants.State;
 import java.util.Map;
@@ -8,20 +8,20 @@ import org.springframework.stereotype.Component;
 @Component
 public class StateCash {
 
-    private static final Map<Long, State> stateCashMap = new ConcurrentHashMap<>();
+    private final Map<Long, State> stateCashMap = new ConcurrentHashMap<>();
 
-    public static State getLastState(Long chatId) {
+    public State getLastState(Long chatId) {
         return stateCashMap.get(chatId) == null ?
                 State.EMPTY
                 :
                 stateCashMap.get(chatId);
     }
 
-    public static void saveStateCash(Long chatId, State state) {
+    public void saveStateCash(Long chatId, State state) {
         stateCashMap.put(chatId, state);
     }
 
-    public static void deleteState(Long chatId) {
+    public void deleteState(Long chatId) {
         stateCashMap.remove(chatId);
     }
 

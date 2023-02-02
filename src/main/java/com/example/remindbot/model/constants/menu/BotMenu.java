@@ -3,8 +3,8 @@ package com.example.remindbot.model.constants.menu;
 public enum BotMenu {
 
     CREATE_KEY("Create new reminder \uD83D\uDD8A"),
-    HELP_KEY("Help information \uD83C\uDD98"),
-    ANOTHER_COMMANDS("Another commands ➡️");
+    HELP_KEY("Help information \uD83C\uDD98");
+//    ANOTHER_COMMANDS("Another commands ➡️");
 
     private String value;
 

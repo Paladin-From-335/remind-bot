@@ -4,6 +4,8 @@ plugins {
     id 'java'
 }
 
+apply plugin: 'java'
+
 group = 'com.example'
 version = '0.0.1-SNAPSHOT'
 sourceCompatibility = '11'
@@ -14,8 +16,15 @@ configurations {
     }
 }
 
-repositories {
-    mavenCentral()
+repositories.mavenCentral()
+
+jar {
+    baseName('reminder-bot')
+    version('0.1.0-b')
+    archiveName("${baseName}-v${version}.jar")
+    manifest.attributes(
+            'Implementation-Title': 'Reminder bot',
+            'Implementation-Version': version)
 }
 
 dependencies {
@@ -30,6 +39,8 @@ dependencies {
     runtimeOnly 'org.postgresql:postgresql'
     annotationProcessor 'org.projectlombok:lombok'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
+
+
 }
 
 tasks.named('test') {

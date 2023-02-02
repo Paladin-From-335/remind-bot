@@ -2,36 +2,29 @@ package com.example.remindbot.service.impl.message;
 
 import static com.example.remindbot.model.constants.Response.ELAPSED_TIME;
 import static com.example.remindbot.utils.DateTimeUtil.validateDateTime;
-import static com.example.remindbot.utils.KeyboardUtil.getMessageMarkup;
-import static com.example.remindbot.utils.Mapper.dtoToResponse;
 import static com.example.remindbot.utils.ResponseBuilder.buildResponse;
 
-import com.example.remindbot.model.constants.State;
+import com.example.remindbot.config.DataWrapperConfig;
 import com.example.remindbot.model.dto.ReminderDto;
-import com.example.remindbot.model.dto.ServiceWrapper;
-import com.example.remindbot.utils.cash.EventCash;
+import com.example.remindbot.service.MessageService;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import lombok.Getter;
 import org.springframework.stereotype.Component;
 
 @Getter
-@Component
-public class TimeMessageImpl extends MessageServiceImpl {
-
-    private final State key = State.REMIND_TIME;
+@Component("REMIND_TIME")
+public class TimeMessageImpl implements MessageService {
 
     @Override
-    public BotApiMethod<?> handleMessage(ServiceWrapper wrapper) {
-        Long id = wrapper.getId();
-        String reminderTime = wrapper.getUserMsg();
-        String userTimezone = wrapper.getUserRepo().getUserTimezone(id);
-        ReminderDto reminder = EventCash.getEvent(id);
+    public BotApiMethod<?> handleMessage(Long id, String reminderTime, DataWrapperConfig data) {
+        String userTimezone = data.getUserRepo().getTimezone(id);
+        ReminderDto reminder = data.getEvents().getEvent(id);
         if (validateDateTime(reminder.getDateTo(), reminderTime, userTimezone)) {
-            EventCash.getEvent(id).setTimeTo(reminderTime);
+            data.getEvents().getEvent(id).setTimeTo(reminderTime);
             return buildResponse(
                     id,
-                    dtoToResponse(reminder),
-                    getMessageMarkup()
+                    data.getMapper().dtoToResponse(reminder),
+                    data.getKeyboard().getReminderMarkup()
             );
         }
         return buildResponse(id, ELAPSED_TIME.toString());

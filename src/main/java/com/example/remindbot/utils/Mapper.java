@@ -10,10 +10,12 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
+import org.springframework.stereotype.Component;
 
+@Component
 public class Mapper {
 
-    public static Reminder dtoToReminder(ReminderDto dto) {
+    public Reminder dtoToReminder(ReminderDto dto) {
         LocalDate ldTo = LocalDate.parse(dto.getDateTo(), DATE_TIME_FORMATTER);
         LocalTime ltTo = LocalTime.parse(dto.getTimeTo(), ISO_TIME);
         return new Reminder(
@@ -25,7 +27,7 @@ public class Mapper {
         );
     }
 
-    public static String dtoToResponse(ReminderDto dto) {
+    public String dtoToResponse(ReminderDto dto) {
         return String.format(
                 CREATED_REMIND.toString(),
                 dto.getRemindText(),

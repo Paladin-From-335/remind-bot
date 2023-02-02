@@ -5,9 +5,11 @@ import java.util.List;
 
 public interface RemindService {
 
-    void saveRemind(Reminder reminder);
+    Reminder saveRemind(Reminder reminder);
 
     void deleteOld();
 
     List<Reminder> getActual();
+
+    void sendReminder();
 }

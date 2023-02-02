@@ -1,46 +1,45 @@
 package com.example.remindbot.service;
 
+import static com.example.remindbot.utils.ResponseBuilder.buildResponse;
+
+import com.example.remindbot.config.DataWrapperConfig;
 import com.example.remindbot.model.constants.State;
 import com.example.remindbot.model.entity.User;
-import com.example.remindbot.repo.UserRepo;
 import com.example.remindbot.service.handler.CallbackHandler;
 import com.example.remindbot.service.handler.MessageHandler;
-import com.example.remindbot.utils.cash.StateCash;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.TelegramBotsApi;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
-import lombok.SneakyThrows;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.PropertySource;
-import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.context.annotation.PropertySources;
 import org.springframework.stereotype.Component;
 
 @Component
-@PropertySource("classpath:application-telegram.properties")
+@PropertySources({
+        @PropertySource("classpath:application-telegram.properties"),
+        @PropertySource("classpath:scheduler.properties")})
 public class BotFaceService extends TelegramLongPollingBot {
-
     private final MessageHandler messageHandler;
     private final CallbackHandler callbackHandler;
-    private final StateCash stateCash;
-    private final UserRepo userRepo;
-    private String botUsername;
-    private String botToken;
+    private final DataWrapperConfig data;
+    private final String botUsername;
+    private final String botToken;
 
     public BotFaceService(TelegramBotsApi telegramBotsApi,
                           @Value("${telegram-bot.name}") String botUsername,
                           @Value("${telegram-bot.token}") String botToken,
                           MessageHandler messageHandler,
                           CallbackHandler callbackHandler,
-                          StateCash stateCash, UserRepo userRepo) throws TelegramApiException {
+                          DataWrapperConfig data) throws TelegramApiException {
         this.botToken = botToken;
         this.botUsername = botUsername;
         this.messageHandler = messageHandler;
         this.callbackHandler = callbackHandler;
-        this.stateCash = stateCash;
-        this.userRepo = userRepo;
+        this.data = data;
         telegramBotsApi.registerBot(this);
     }
 
@@ -54,21 +53,25 @@ public class BotFaceService extends TelegramLongPollingBot {
         return this.botToken;
     }
 
-    @SneakyThrows
     @Override
     public void onUpdateReceived(Update update) {
-        if (update.hasMessage() && update.getMessage().hasText()) {
-            handleMessage(update.getMessage().getText(), update);
-        } else if (update.hasCallbackQuery()) {
-            handleQuery(update);
+        try {
+            if (update.hasMessage() && update.getMessage().hasText()) {
+                handleMessage(update);
+            } else if (update.hasCallbackQuery()) {
+                handleQuery(update);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
-    private void handleMessage(String userMessage, Update update) throws TelegramApiException {
+    private void handleMessage(Update update) throws TelegramApiException {
         State state;
+        String userMessage = update.getMessage().getText();
         long id = update.getMessage().getChatId();
-        if (!userRepo.existsById(id)) {
-            userRepo.saveAndFlush(new User(id));
+        if (!data.getUserRepo().existsById(id)) {
+            data.getUserRepo().saveAndFlush(new User(id));
         }
         switch (userMessage) {
             case "/start":
@@ -81,30 +84,28 @@ public class BotFaceService extends TelegramLongPollingBot {
                 state = State.HELP;
                 break;
             default:
-                state = stateCash.getLastState(id);
+                state = data.getStates().getLastState(id);
                 break;
         }
-        sendMsg(messageHandler.handleMessage(update, state));
+        int msgId = sendMsg((SendMessage) messageHandler.handleMessage(update, state));
+        data.getMsgIds().saveMsgId(id, msgId);
     }
 
     private void handleQuery(Update query) throws TelegramApiException {
-        sendMsg((SendMessage) callbackHandler.handleCallback(query));
-    }
-
-    private void sendMsg(SendMessage response) throws TelegramApiException {
-        response.enableHtml(true);
-        execute(response);
-    }
-
-    //TODO GET METHOD ID
-    private void sendMsg(BotApiMethod<?>... args) throws TelegramApiException {
-        for (BotApiMethod<?> arg : args) {
-            execute(arg);
+        Long id = query.getCallbackQuery().getMessage().getChatId();
+        if (data.getEvents().isEventExist(id)) {
+            sendMsg(callbackHandler.handleCallback(query, data.getMsgIds().getMsgId(id)));
+        } else {
+            sendMsg(buildResponse(id));
         }
     }
 
-    @Scheduled
-    @SuppressWarnings("PLUG")
-    void plug() {
+    private Integer sendMsg(SendMessage response) throws TelegramApiException {
+        response.enableHtml(true);
+        return execute(response).getMessageId();
+    }
+
+    public void sendMsg(BotApiMethod<?> response) throws TelegramApiException {
+        execute(response);
     }
 }
